@@ -2,6 +2,16 @@
 <head><title>Core Banking - Member Search</title></head>
 <body>
   <h2>Member Search</h2>
+  {% if show_popup %}
+  <table border="2" cellpadding="10" style="background-color:#ffe;">
+    <tr><td>
+      <p><b>System Notice</b></p>
+      <p>System maintenance is scheduled tonight.</p>
+      <a href="/search"><button type="button">Dismiss</button></a>
+    </td></tr>
+  </table>
+{% endif %}
+<input type="hidden" name="slow" value="1">
   {% if error %}<p><font color="red">{{ error }}</font></p>{% endif %}
   <form method="post" action="/search">
     <table border="1" cellpadding="6">

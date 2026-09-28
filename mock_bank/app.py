@@ -1,6 +1,7 @@
 import os
 import secrets
 import time
+import time as time_module
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -43,31 +44,50 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
 
 def get_session_token(request: Request) -> str | None:
     token = request.cookies.get("session")
-    if token and token in SESSIONS:
-        return token
-    return None
+    if not token or token not in SESSIONS:
+        return None
+    if time_module.time() - SESSIONS[token] > SESSION_TIMEOUT_SECONDS:
+        del SESSIONS[token]
+        return None
+    return token
 
 @app.get("/search")
-def search_page(request: Request):
+def search_page(request: Request, popup: int = 0, crash: int = 0):
     token = get_session_token(request)
     if not token:
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse(request, "search.html", {"error": None})
 
+    if crash:
+        raise HTTPException(status_code=500, detail="Internal error")
+
+    return templates.TemplateResponse(
+        request, "search.html", {"error": None, "show_popup": bool(popup)}
+    )
 
 @app.post("/search")
-def search_submit(request: Request, member_id: str = Form(...)):
+def search_submit(
+    request: Request,
+    member_id: str = Form(...),
+    slow: int = 0,
+):
     token = get_session_token(request)
     if not token:
         return RedirectResponse("/login", status_code=303)
+
+    if slow:
+        time_module.sleep(3)
+
+    if not member_id.isdigit():
+        return templates.TemplateResponse(
+            request, "search.html", {"error": "Member ID must be numeric.", "show_popup": False}
+        )
 
     if member_id in MEMBERS:
         return RedirectResponse(f"/detail/{member_id}", status_code=303)
 
     return templates.TemplateResponse(
-        request, "search.html", {"error": "No member found."}
+        request, "search.html", {"error": "No member found.", "show_popup": False}
     )
-
 
 @app.get("/detail/{member_id}")
 def detail_page(request: Request, member_id: str):
