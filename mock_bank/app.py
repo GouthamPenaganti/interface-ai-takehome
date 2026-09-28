@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi import HTTPException
+from fastapi.responses import HTMLResponse
+from mock_bank.data import MEMBERS
 
 load_dotenv()
 
@@ -19,6 +22,8 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app = FastAPI()
 
 SESSIONS: dict[str, float] = {}
+
+SESSION_TIMEOUT_SECONDS = 300  # 5 minutes, used later for expiry
 
 @app.get("/login")
 def login_page(request: Request):
@@ -35,3 +40,48 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
         return response
     
     return templates.TemplateResponse(request, "login.html", {"error": "Invalid username or password."})
+
+def get_session_token(request: Request) -> str | None:
+    token = request.cookies.get("session")
+    if token and token in SESSIONS:
+        return token
+    return None
+
+@app.get("/search")
+def search_page(request: Request):
+    token = get_session_token(request)
+    if not token:
+        return RedirectResponse("/login", status_code=303)
+    return templates.TemplateResponse(request, "search.html", {"error": None})
+
+
+@app.post("/search")
+def search_submit(request: Request, member_id: str = Form(...)):
+    token = get_session_token(request)
+    if not token:
+        return RedirectResponse("/login", status_code=303)
+
+    if member_id in MEMBERS:
+        return RedirectResponse(f"/detail/{member_id}", status_code=303)
+
+    return templates.TemplateResponse(
+        request, "search.html", {"error": "No member found."}
+    )
+
+
+@app.get("/detail/{member_id}")
+def detail_page(request: Request, member_id: str):
+    token = get_session_token(request)
+    if not token:
+        return RedirectResponse("/login", status_code=303)
+
+    member = MEMBERS.get(member_id)
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    balance_display = "{:,.2f}".format(member["balance"])
+    return templates.TemplateResponse(
+        request,
+        "detail.html",
+        {"member_id": member_id, "member": member, "balance_display": balance_display},
+    )

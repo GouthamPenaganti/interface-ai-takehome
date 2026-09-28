@@ -1,0 +1,13 @@
+<html>
+<head><title>Core Banking - Member Detail</title></head>
+<body>
+  <h2>Member Detail</h2>
+  <table border="1" cellpadding="6">
+    <tr><td><label>Name</label></td><td>{{ member.name }}</td></tr>
+    <tr><td><label>SSN</label></td><td>{{ member.ssn_masked }}</td></tr>
+    <tr><td><label>Balance</label></td><td>{{ balance_display }}</td></tr>
+  </table>
+  <br>
+  <button type="button">Open Sub-Account</button>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<html>
+<head><title>Core Banking - Member Search</title></head>
+<body>
+  <h2>Member Search</h2>
+  {% if error %}<p><font color="red">{{ error }}</font></p>{% endif %}
+  <form method="post" action="/search">
+    <table border="1" cellpadding="6">
+      <tr>
+        <td><label>Member ID</label></td>
+        <td><input type="text" name="member_id"></td>
+      </tr>
+      <tr>
+        <td colspan="2"><button type="submit">Search</button></td>
+      </tr>
+    </table>
+  </form>
+</body>
+</html>
